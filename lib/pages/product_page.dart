@@ -40,7 +40,6 @@ class _ProductPageState extends State<ProductPage> {
   dynamic errorMessage = "";
   List<ProductOptionModel> productOptions = <ProductOptionModel>[];
   List<ProductOptionModel> optionsSelected = <ProductOptionModel>[];
-  // List<ProductOptionModel> listValues = <ProductOptionModel>[];
 
   @override
   void initState() {
@@ -79,6 +78,12 @@ class _ProductPageState extends State<ProductPage> {
     void addSelectedOption(item){
       optionsSelected.removeWhere((element) => element.label == item.label);
       optionsSelected.add(item);
+    }
+
+    bool isSelectedOption(optionsSelected, valueIndex){
+      var array = optionsSelected as List;
+      var result  = array.where((element) => element.valueIndex == valueIndex);
+      return result.isNotEmpty ? true : false;
     }
 
     return Scaffold(
@@ -134,68 +139,8 @@ class _ProductPageState extends State<ProductPage> {
                   price: product["price_range"]["maximum_price"]["regular_price"]["value"],
                   final_price: product["price_range"]["maximum_price"]["final_price"]["value"],
                 ),
-                type == "ConfigurableProduct" ? ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: options.length,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemBuilder: (context, index) {
-                    String optionLabel = options[index]["label"];
-                    List<ProductOptionModel> listValues = getOptionsByLabel(productOptions, optionLabel);
-
-                    return Container(
-                      padding: EdgeInsets.symmetric(vertical: 22),
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(width: 1, color: colorBorder))
-                      ),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 55,
-                            child: Text(optionLabel),
-                          ),
-                          Expanded(flex: 1, child: GridView.builder(
-                            scrollDirection: Axis.vertical,
-                            shrinkWrap: true,
-                            physics:  NeverScrollableScrollPhysics(),
-                            itemCount: listValues.length,
-                            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: optionLabel == "Color" ? 30 : 60,
-                              mainAxisSpacing: 15,
-                              crossAxisSpacing: 20,
-                              childAspectRatio:optionLabel == "Color" ? 1 : 2
-                            ),
-                            itemBuilder: (context, index) {
-                              return InkWell(
-                                onTap: () {
-                                  setState(() {                                    
-                                    for (var element in listValues) {
-                                      element.isSelected = false;
-                                    }
-                                    listValues[index].isSelected = true;
-                                    addSelectedOption(getOptionsSelected(listValues));
-                                  });
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: optionLabel == "Color" ?  listValues[index].value.toColor() : Colors.transparent,
-                                    border: Border.all(width: listValues[index].isSelected ? 2 : 1, color: listValues[index].isSelected ? colorTheme : colorBorder),
-                                    borderRadius: optionLabel == "Color" ? BorderRadius.circular(5) : BorderRadius.circular(20)
-                                  ),
-                                  child: optionLabel == "Color" ? SizedBox() :Center(child: 
-                                    Text(listValues[index].value, 
-                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)
-                                    )
-                                  ),
-                                ),
-                              );
-                            },
-                          ))
-                        ],
-                      ),
-                    );
-                  },
-                ) : SizedBox(),
+                type == "ConfigurableProduct" 
+                ? ProductPageConfigOption(options, getOptionsByLabel, addSelectedOption, getOptionsSelected, isSelectedOption) : SizedBox(),
                 ProductPageActions(sku, optionsSelected, variants, type),
                 ProductPageContent(html: product["description"]["html"]),
                 ProductPageRelated(products: relateds),
@@ -212,6 +157,74 @@ class _ProductPageState extends State<ProductPage> {
         height: 80,
         child: StickyFooter(scaffoldKey: _scaffoldKey)
       )
+    );
+  }
+
+  ListView ProductPageConfigOption(options, List<ProductOptionModel> Function(dynamic productOptions, dynamic label) getOptionsByLabel, void Function(dynamic item) addSelectedOption, ProductOptionModel Function(dynamic productOptions) getOptionsSelected, bool Function(dynamic optionsSelected, dynamic valueIndex) isSelectedOption) {
+    return ListView.builder(
+      shrinkWrap: true,
+      itemCount: options.length,
+      physics: NeverScrollableScrollPhysics(),
+      itemBuilder: (context, index) {
+        String optionLabel = options[index]["label"];
+        List<ProductOptionModel> listValues = getOptionsByLabel(productOptions, optionLabel);
+
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: 22),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(width: 1, color: colorBorder))
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 55,
+                child: Text(optionLabel),
+              ),
+              Expanded(flex: 1, child: GridView.builder(
+                scrollDirection: Axis.vertical,
+                shrinkWrap: true,
+                physics:  NeverScrollableScrollPhysics(),
+                itemCount: listValues.length,
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: optionLabel == "Color" ? 30 : 60,
+                  mainAxisSpacing: 15,
+                  crossAxisSpacing: 20,
+                  childAspectRatio:optionLabel == "Color" ? 1 : 2
+                ),
+                itemBuilder: (context, index) {
+                  return InkWell(
+                    onTap: () {
+                      setState(() {                                    
+                        for (var element in listValues) {
+                          element.isSelected = false;
+                        }
+                        listValues[index].isSelected = true;
+                        addSelectedOption(getOptionsSelected(listValues));
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: optionLabel == "Color" ?  listValues[index].value.toColor() : Colors.transparent,
+                        border: Border.all(
+                          width: isSelectedOption(optionsSelected, listValues[index].valueIndex) ? 2 : 1, 
+                          color: isSelectedOption(optionsSelected, listValues[index].valueIndex) ? colorTheme : colorBorder
+                        ),
+                        borderRadius: optionLabel == "Color" ? BorderRadius.circular(5) : BorderRadius.circular(20)
+                      ),
+                      child: optionLabel == "Color" ? SizedBox() :Center(child: 
+                        Text(listValues[index].value, 
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)
+                        )
+                      ),
+                    ),
+                  );
+                },
+              ))
+            ],
+          ),
+        );
+      },
     );
   }
 

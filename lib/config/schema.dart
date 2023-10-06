@@ -213,7 +213,7 @@ const queryProductSku = '''
 ''';
 
 const queryOnlyCmsBlock = '''
-  query queryCmsBlock(\$identify: String!){
+  query queryOnlyCmsBlock(\$identify: String!){
     cmsBlocks(identifiers: \$identify) {
       items {
         identifier

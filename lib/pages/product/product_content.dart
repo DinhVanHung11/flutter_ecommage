@@ -1,4 +1,4 @@
-// ignore_for_file: must_be_immutable, prefer_typing_uninitialized_variables
+// ignore_for_file: must_be_immutable, prefer_typing_uninitialized_variables, import_of_legacy_library_into_null_safe
 
 import 'package:bbb/variables/color.dart';
 import 'package:bbb/widgets/popup/popup_full_content.dart';
